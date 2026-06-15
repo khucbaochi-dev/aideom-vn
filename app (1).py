@@ -10,6 +10,7 @@ import matplotlib
 matplotlib.use('Agg')
 from scipy.optimize import linprog, milp, LinearConstraint, Bounds
 import io
+import os
 
 # ── CẤU HÌNH TRANG ───────────────────────────────────────────────
 st.set_page_config(
@@ -72,6 +73,43 @@ def load_data():
     return df_macro, df_sectors, df_regions
 
 df_macro, df_sectors, df_regions = load_data()
+
+from pathlib import Path
+import runpy
+import contextlib
+import traceback
+
+BASE_DIR = Path(__file__).resolve().parent
+
+def run_script(script_name: str, image_name: str | None = None):
+    """Run a standalone bài script, capture stdout/stderr, and keep generated files next to the app."""
+    script_path = BASE_DIR / script_name
+    if not script_path.exists():
+        return "", f"Không tìm thấy file: {script_path}"
+    buf_out = io.StringIO()
+    buf_err = io.StringIO()
+    old_cwd = Path.cwd()
+    try:
+        # Ensure relative CSV/image paths resolve from the app folder
+        os.chdir(BASE_DIR)
+        with contextlib.redirect_stdout(buf_out), contextlib.redirect_stderr(buf_err):
+            runpy.run_path(str(script_path), run_name="__main__")
+        stdout = buf_out.getvalue()
+        stderr = buf_err.getvalue()
+        if stderr and not stdout:
+            stdout = stderr
+        return stdout, None
+    except Exception:
+        tb = traceback.format_exc()
+        return buf_out.getvalue() + ("\n" if buf_out.getvalue() else "") + buf_err.getvalue(), tb
+    finally:
+        os.chdir(old_cwd)
+
+def show_generated_image(image_name: str, caption: str):
+    image_path = BASE_DIR / image_name
+    if image_path.exists():
+        st.image(str(image_path), caption=caption, use_container_width=True)
+
 
 # ── SIDEBAR ──────────────────────────────────────────────────────
 with st.sidebar:
@@ -611,43 +649,116 @@ elif page == "🔗 Bài 12 — AIDEOM tích hợp":
         else:
             st.info("👆 Click **Chạy M4+M5** để phân tích rủi ro lao động")
 
+
+
 elif page == "🗺️ Bài 4 — LP ngành-vùng":
-    # code từ bai04_lp_region.py
+    st.title("Bài 4 — LP 24 biến phân bổ 50,000 tỷ")
+    st.info("📌 LP phân bổ 50,000 tỷ cho 6 vùng × 4 hạng mục")
+    with st.expander("Xem mô hình toán học", expanded=True):
+        st.code("""**max Z = Σ β_{jr}·x_{jr}**
+- 24 biến: 6 vùng × 4 hạng mục
+- Ràng buộc: ngân sách, sàn/trần vùng, công bằng số hóa""", language="text")
+    if st.button("▶ Chạy Bài 4", key="run_bai4"):
+        stdout, err = run_script("bai04_lp_region.py", "bai04_ket_qua.png")
+        if stdout:
+            st.subheader("Kết quả in ra")
+            st.code(stdout, language="text")
+        if err:
+            st.error(err)
+        show_generated_image("bai04_ket_qua.png", "Kết quả Bài 4")
 
 elif page == "📋 Bài 5 — MIP 15 dự án":
-    # code từ bai05_mip_projects.py
+    st.title("Bài 5 — MIP lựa chọn tối ưu 15 dự án")
+    st.info("📌 MIP chọn dự án chuyển đổi số bằng biến nhị phân")
+    with st.expander("Xem mô hình toán học", expanded=True):
+        st.code("""**max Σ B_i·y_i**, y_i ∈ {0,1}
+- 15 biến nhị phân
+- Ràng buộc: ngân sách, tiên quyết, loại trừ""", language="text")
+    if st.button("▶ Chạy Bài 5", key="run_bai5"):
+        stdout, err = run_script("bai05_mip_projects.py", "bai05_ket_qua.png")
+        if stdout:
+            st.subheader("Kết quả in ra")
+            st.code(stdout, language="text")
+        if err:
+            st.error(err)
+        show_generated_image("bai05_ket_qua.png", "Kết quả Bài 5")
 
 elif page == "🎯 Bài 7 — Pareto đa mục tiêu":
-    # code từ bai07_pareto.py
+    st.title("Bài 7 — Pareto front 4 mục tiêu")
+    st.info("📌 Pareto front với 4 mục tiêu xung đột")
+    with st.expander("Xem mô hình toán học", expanded=True):
+        st.code("""**max f₁ (GDP), min f₂ (bất bình đẳng), min f₃ (phát thải), min f₄ (rủi ro)**
+- Quét nghiệm Pareto bằng weighted-sum + SLSQP
+- Chọn nghiệm thỏa hiệp bằng TOPSIS""", language="text")
+    if st.button("▶ Chạy Bài 7", key="run_bai7"):
+        stdout, err = run_script("bai07_pareto.py", "bai07_ket_qua.png")
+        if stdout:
+            st.subheader("Kết quả in ra")
+            st.code(stdout, language="text")
+        if err:
+            st.error(err)
+        show_generated_image("bai07_ket_qua.png", "Kết quả Bài 7")
 
 elif page == "⏳ Bài 8 — Động 2026-2035":
-    # code từ bai08_dynamic.py
+    st.title("Bài 8 — Tối ưu động 2026-2035")
+    st.info("📌 Tối ưu động phân bổ vốn 10 năm")
+    with st.expander("Xem mô hình toán học", expanded=True):
+        st.code("""**max Σ ρ^t·ln(C_t)**, ρ=0.97, T=10 năm
+- 50 biến: I_K, I_D, I_AI, I_H, C mỗi năm
+- Ràng buộc ngân sách liên thời kỳ""", language="text")
+    if st.button("▶ Chạy Bài 8", key="run_bai8"):
+        stdout, err = run_script("bai08_dynamic.py", "bai08_ket_qua.png")
+        if stdout:
+            st.subheader("Kết quả in ra")
+            st.code(stdout, language="text")
+        if err:
+            st.error(err)
+        show_generated_image("bai08_ket_qua.png", "Kết quả Bài 8")
 
 elif page == "👷 Bài 9 — Lao động & AI":
-    # code từ bai09_labor.py
+    st.title("Bài 9 — LP tối đa NetJob")
+    st.info("📌 Tác động AI tới thị trường lao động")
+    with st.expander("Xem mô hình toán học", expanded=True):
+        st.code("""**max Σ NetJob_i = NewJob + UpgradeJob − DisplacedJob**
+- 16 biến: x_AI, x_H × 8 ngành
+- Ràng buộc: Displaced ≤ RetrainingCapacity""", language="text")
+    if st.button("▶ Chạy Bài 9", key="run_bai9"):
+        stdout, err = run_script("bai09_labor.py", "bai09_ket_qua.png")
+        if stdout:
+            st.subheader("Kết quả in ra")
+            st.code(stdout, language="text")
+        if err:
+            st.error(err)
+        show_generated_image("bai09_ket_qua.png", "Kết quả Bài 9")
 
 elif page == "🎲 Bài 10 — Stochastic SP":
-    # code từ bai10_stochastic.py
+    st.title("Bài 10 — Stochastic LP")
+    st.info("📌 Stochastic LP 2 giai đoạn, 4 kịch bản")
+    with st.expander("Xem mô hình toán học", expanded=True):
+        st.code("""**max β·x + Σ p_s·β_s·y_s**
+- x là quyết định giai đoạn 1
+- y^s là recourse theo kịch bản""", language="text")
+    if st.button("▶ Chạy Bài 10", key="run_bai10"):
+        stdout, err = run_script("bai10_stochastic.py", "bai10_ket_qua.png")
+        if stdout:
+            st.subheader("Kết quả in ra")
+            st.code(stdout, language="text")
+        if err:
+            st.error(err)
+        show_generated_image("bai10_ket_qua.png", "Kết quả Bài 10")
 
 elif page == "🤖 Bài 11 — Q-learning RL":
-    # code từ bai11_qlearning.py
-
-**Để chạy trên Colab:**
-1. Mở file `bai{num:02d}_*.py` bằng TextEdit
-2. **Cmd+A** → **Cmd+C**
-3. Dán vào cell Colab → **Shift+Enter**
-""")
-        with st.expander("Xem mô hình toán học"):
-            models={
-                4:"**max Z = Σ β_{jr}·x_{jr}**\n- 24 biến: x[6 vùng][4 hạng mục]\n- Ràng buộc C1-C5: ngân sách, sàn/trần vùng, công bằng số hóa",
-                5:"**max Σ B_i·y_i**, y_i ∈ {0,1}\n- 15 biến nhị phân\n- Ràng buộc: ngân sách, loại trừ, tiên quyết, cân đối lĩnh vực",
-                7:"**max f₁ (GDP), min f₂ (BĐ), min f₃ (phát thải), min f₄ (rủi ro)**\n- 200 nghiệm Pareto\n- Chọn nghiệm thỏa hiệp bằng TOPSIS",
-                8:"**max Σ ρ^t·ln(C_t)**, ρ=0.97, T=10 năm\n- 50 biến: I_K, I_D, I_AI, I_H, C mỗi năm\n- Ràng buộc ngân sách: C_t + ΣI ≤ Y_t",
-                9:"**max Σ NetJob_i = NewJob + UpgradeJob − DisplacedJob**\n- 16 biến: x_AI, x_H × 8 ngành\n- Ràng buộc: Displaced ≤ RetrainingCapacity",
-                10:"**max β·x + Σ p_s·β_s·y_s**\n- x ≤ 65,000 tỷ (first-stage)\n- y^s ≤ 15,000 tỷ (second-stage)\n- y_AI^s ≤ 0.5·x_H",
-                11:"**Q-Learning**: Q(s,a) += α[r + γ·max Q(s',a') − Q(s,a)]\n- 81 trạng thái (3⁴), 5 hành động\n- α=0.1, γ=0.95, ε giảm từ 1.0→0.05",
-            }
-            st.code(models.get(num,"Xem file .py"), language="")
-
-# ═══ PHẦN MỞ RỘNG – GHI ĐÈ PHẦN PLACEHOLDER ═══
-# (không dùng – đã xử lý ở phần else phía trên)
+    st.title("Bài 11 — Q-Learning")
+    st.info("📌 Q-Learning chính sách kinh tế thích nghi")
+    with st.expander("Xem mô hình toán học", expanded=True):
+        st.code("""**Q(s,a) ← Q(s,a) + α[r + γ·max Q(s',a') − Q(s,a)]**
+- 81 trạng thái (3⁴), 5 hành động
+- ε-greedy, 20,000 episodes""", language="text")
+    if st.button("▶ Chạy Bài 11", key="run_bai11"):
+        stdout, err = run_script("bai11_qlearning.py", "bai11_ket_qua.png")
+        if stdout:
+            st.subheader("Kết quả in ra")
+            st.code(stdout, language="text")
+        if err:
+            st.error(err)
+        show_generated_image("bai11_ket_qua.png", "Kết quả Bài 11")
