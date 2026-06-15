@@ -611,23 +611,26 @@ elif page == "🔗 Bài 12 — AIDEOM tích hợp":
         else:
             st.info("👆 Click **Chạy M4+M5** để phân tích rủi ro lao động")
 
-# ── CÁC BÀI KHÁC chỉ hiển thị placeholder ───────────────────────
-else:
-    bai_map={
-        "🗺️ Bài 4 — LP ngành-vùng":   ("Bài 4","LP 24 biến phân bổ 50,000 tỷ cho 6 vùng × 4 hạng mục",4),
-        "📋 Bài 5 — MIP 15 dự án":     ("Bài 5","MIP lựa chọn tối ưu trong 15 dự án chuyển đổi số quốc gia",5),
-        "🎯 Bài 7 — Pareto đa mục tiêu":("Bài 7","Pareto front 4 mục tiêu: GDP, bình đẳng, môi trường, an ninh",7),
-        "⏳ Bài 8 — Động 2026-2035":   ("Bài 8","Tối ưu động phân bổ vốn 10 năm, U=ρ^t·ln(C_t)",8),
-        "👷 Bài 9 — Lao động & AI":    ("Bài 9","LP tối đa NetJob: đầu tư AI vs đào tạo lại 8 ngành",9),
-        "🎲 Bài 10 — Stochastic SP":   ("Bài 10","Stochastic LP 2 giai đoạn, 4 kịch bản, VSS & EVPI",10),
-        "🤖 Bài 11 — Q-learning RL":   ("Bài 11","Q-Learning 81 trạng thái, 5 hành động, 20,000 episodes",11),
-    }
-    if page in bai_map:
-        name, desc, num = bai_map[page]
-        st.title(f"{name} — {desc.split(':')[0]}")
-        st.info(f"📌 {desc}")
-        st.markdown(f"""
-Bài này đã được giải đầy đủ trong file **`bai{num:02d}_*.py`** trong bộ file đã tải.
+elif page == "🗺️ Bài 4 — LP ngành-vùng":
+    # code từ bai04_lp_region.py
+
+elif page == "📋 Bài 5 — MIP 15 dự án":
+    # code từ bai05_mip_projects.py
+
+elif page == "🎯 Bài 7 — Pareto đa mục tiêu":
+    # code từ bai07_pareto.py
+
+elif page == "⏳ Bài 8 — Động 2026-2035":
+    # code từ bai08_dynamic.py
+
+elif page == "👷 Bài 9 — Lao động & AI":
+    # code từ bai09_labor.py
+
+elif page == "🎲 Bài 10 — Stochastic SP":
+    # code từ bai10_stochastic.py
+
+elif page == "🤖 Bài 11 — Q-learning RL":
+    # code từ bai11_qlearning.py
 
 **Để chạy trên Colab:**
 1. Mở file `bai{num:02d}_*.py` bằng TextEdit
